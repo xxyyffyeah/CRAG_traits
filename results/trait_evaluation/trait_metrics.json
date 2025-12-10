@@ -1,0 +1,18 @@
+{
+  "0": {
+    "mean_alignment": 3.0,
+    "std_alignment": 0.0,
+    "median_alignment": 3.0,
+    "excellent_rate": 0.0,
+    "good_or_better_rate": 0.0,
+    "poor_or_worse_rate": 0.0
+  },
+  "10": {
+    "mean_alignment": 3.0,
+    "std_alignment": 0.0,
+    "median_alignment": 3.0,
+    "excellent_rate": 0.0,
+    "good_or_better_rate": 0.0,
+    "poor_or_worse_rate": 0.0
+  }
+}

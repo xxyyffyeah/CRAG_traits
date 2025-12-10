@@ -25,12 +25,14 @@ from libs.metrics import evaluate_direct_match
 from libs.metrics import evaluate_direct_match_reflect_rerank
 
 import pdb
+from dotenv import load_dotenv
+load_dotenv()
 
-external = False
+external = True
 
 if external:
     ### get the openai api key from the environment
-    openai.api_key = os.environ.get('OPENAI_API_KEY')
+    openai.api_key = os.getenv('OPENAI_API_KEY')
     
     ### set organization
     if os.environ.get('OPENAI_ORG') is not None:
@@ -56,7 +58,7 @@ data_root = f"data/{dataset}"
 from_pkl = f"{data_root}/{datafile}.pkl"
 
 cf_model = "large_pop_adj_07sym"
-cf_root = f"models/cf/{cf_model}"
+cf_root = f"{cf_model}"
 
 ### some hyperparameters
 temperature = 0.0

@@ -1,0 +1,63 @@
+================================================================================
+TRAIT-AWARE MOVIE RECOMMENDATION EVALUATION
+================================================================================
+
+Evaluation Date: 2025-12-02 23:09:10.695545
+Number of samples: 1
+Trait Model: gpt-5.1
+K values: [10]
+Random seed: 42
+
+================================================================================
+OVERALL METRICS
+================================================================================
+
+
+--- K=0 ---
+Mean alignment: 3.000 ± 0.000
+Median alignment: 3.0
+Excellent rate: 0.0%
+Good+ rate: 0.0%
+Poor- rate: 0.0%
+
+--- K=10 ---
+Mean alignment: 3.000 ± 0.000
+Median alignment: 3.0
+Excellent rate: 0.0%
+Good+ rate: 0.0%
+Poor- rate: 0.0%
+
+
+================================================================================
+SAMPLE-LEVEL DETAILS
+================================================================================
+
+
+============================================================
+Sample 1
+============================================================
+Turn ID: t1_j0cgux3
+Assigned Trait: The user is a survivor of domestic violence.
+Trait Category: trauma_background
+
+Conversation:
+------------------------------------------------------------
+USER: movies like lord of the rings and the hobbit, willow.. So fantasy adventure movies. I also liked rings of power, the witcher, and willow tv series but am looking for more movies similar to these.
+------------------------------------------------------------
+
+Recommendations (K=10, after rerank):
+  1. The Princess Bride
+  2. Harry Potter and the Sorcerer's Stone
+  3. Stardust
+  4. The Chronicles of Narnia: The Lion, the Witch and the Wardrobe
+  5. The NeverEnding Story
+  6. Pirates of the Caribbean: The Curse of the Black Pearl
+  7. Star Wars: Episode IV - A New Hope
+  8. Labyrinth
+  9. Pan's Labyrinth
+  10. The Chronicles of Narnia: Prince Caspian
+
+Trait Alignment Score: 3/5
+Explanation: While many of these fantasy films are relatively light or escapist, several (e.g., Pan's Labyrinth, Conan the Barbarian, The Huntsman: Winter's War, The Brothers Grimm) contain intense violence, abuse, or dark themes that could be triggering for a domestic violence survivor.
+
+Groundtruth (first 5): ['The Dark Crystal']

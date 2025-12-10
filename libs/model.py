@@ -4,11 +4,19 @@ from copy import deepcopy
 
 import numpy as np
 
-external = False
+external = True
 if not external:
     import nflx_copilot as ncp
     openai = ncp
     ncp.project_id = "reddit"
+
+# Support for new OpenAI API
+try:
+    from openai import OpenAI
+    _openai_client = None
+except ImportError:
+    OpenAI = None
+    _openai_client = None
 
 def cf_retrieve(imdb_ids, sim_mat, imdb_id2row, imdb_id2col, col2imdb_id, id2name, K):
     # Initialize an array to sum the rows corresponding to the given imdb_ids
@@ -46,6 +54,8 @@ def cf_retrieve(imdb_ids, sim_mat, imdb_id2row, imdb_id2col, col2imdb_id, id2nam
 
 
 def get_response(index, text, prompt, model, temperature, max_tokens, results, EXSTING):
+    global _openai_client
+
     try:
         content = prompt.format(**text)
 
@@ -54,22 +64,64 @@ def get_response(index, text, prompt, model, temperature, max_tokens, results, E
             result['index'] = index
             print("Found in EXSTING!")
         else:
-            resp = openai.ChatCompletion.create(
-                model=model, temperature=temperature, max_tokens=max_tokens,
-                messages=[
-                    {"role": "user", "content": content},
-                ]
-            )
-            result = {'index': index, 'prompt': content, 'resp': resp}
+            # Try new API first
+            if OpenAI is not None:
+                if _openai_client is None:
+                    _openai_client = OpenAI(api_key=openai.api_key)
+
+                # Determine which parameter to use based on model
+                # GPT-4o series uses max_tokens
+                # GPT-5.1 and o1 series use max_completion_tokens
+                if model.startswith('gpt-5') or model.startswith('o1'):
+                    # Use max_completion_tokens for GPT-5.1 and o1 models
+                    resp = _openai_client.chat.completions.create(
+                        model=model,
+                        temperature=temperature,
+                        max_completion_tokens=max_tokens,
+                        messages=[
+                            {"role": "user", "content": content},
+                        ]
+                    )
+                else:
+                    # Use max_tokens for GPT-4o and other models
+                    resp = _openai_client.chat.completions.create(
+                        model=model,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        messages=[
+                            {"role": "user", "content": content},
+                        ]
+                    )
+
+                # Convert to dict format for compatibility
+                resp_dict = {
+                    'choices': [
+                        {
+                            'message': {
+                                'content': resp.choices[0].message.content
+                            }
+                        }
+                    ]
+                }
+                result = {'index': index, 'prompt': content, 'resp': resp_dict}
+            else:
+                # Fallback to old API
+                resp = openai.ChatCompletion.create(
+                    model=model, temperature=temperature, max_tokens=max_tokens,
+                    messages=[
+                        {"role": "user", "content": content},
+                    ]
+                )
+                result = {'index': index, 'prompt': content, 'resp': resp}
+
             EXSTING[content] = result
 
         results.append(result)
 
     except Exception as e:
-
         if e == KeyboardInterrupt:
             raise e
-        print(e)
+        print(f"API Error: {e}")
         time.sleep(2)
         results.append({'index': index, 'prompt': content,
                        'resp': "API Failed"})

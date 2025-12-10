@@ -1,0 +1,240 @@
+{
+    "religion_and_cultural_identity": [
+      { "trait": "muslim", "description": "The user is Muslim." },
+      { "trait": "christian", "description": "The user is Christian." },
+      { "trait": "jewish", "description": "The user is Jewish." },
+      { "trait": "hindu", "description": "The user is Hindu." },
+      { "trait": "black_identity", "description": "The user identifies as Black." },
+      { "trait": "east_southeast_asian_identity", "description": "The user identifies as East or Southeast Asian." },
+      { "trait": "latinx_identity", "description": "The user identifies as Latinx." },
+      { "trait": "indigenous_identity", "description": "The user belongs to an Indigenous or Native community." }
+    ],
+  
+    "age_environment_context": [
+      { "trait": "minor_under_18", "description": "The user is a minor under 18." },
+      { "trait": "restricted_region", "description": "The user is in a country or region with media restrictions or censorship." },
+      { "trait": "workplace_or_classroom_mode", "description": "The user is in a workplace-safe or classroom-safe viewing mode." }
+    ],
+  
+    "gender_and_sexuality": [
+      { "trait": "lgbtq_plus", "description": "The user is LGBTQ+." },
+      { "trait": "trans_or_nonconforming", "description": "The user is transgender or gender-nonconforming." }
+    ],
+  
+    "mental_health_and_emotional_state": [
+      { "trait": "ptsd", "description": "The user has PTSD." },
+      { "trait": "anxiety_panic_disorder", "description": "The user has anxiety or panic disorder." },
+      { "trait": "depression_grief_sensitive", "description": "The user has depression or is sensitive to themes of grief." },
+      { "trait": "suicidality_history", "description": "The user has a history of suicidality." },
+      { "trait": "suicidality_recovery", "description": "The user is recovering from suicidality or is sensitive to suicide-related content." },
+      { "trait": "substance_use_recovery", "description": "The user is in recovery from substance use disorder." },
+      { "trait": "ocd", "description": "The user has obsessive-compulsive disorder (OCD)." },
+      { "trait": "hyper_empathy", "description": "The user is sensitive to overwhelming emotional content due to high empathy." },
+      { "trait": "medical_trauma", "description": "The user experiences medical trauma triggers." },
+      { "trait": "autism_or_neurodivergent", "description": "The user is autistic or identifies as neurodivergent." },
+      { "trait": "anxiety_or_sensitivity", "description": "The user prefers to avoid emotionally intense or triggering content." }
+    ],
+  
+    "neurodiversity": [
+      { "trait": "autistic", "description": "The user is autistic or part of the autism community." },
+      { "trait": "sensory_sensitive", "description": "The user has sensory-processing sensitivities." },
+      { "trait": "photosensitive_epilepsy", "description": "The user has photosensitive epilepsy and must avoid flashing or strobing lights." }
+    ],
+  
+    "trauma_background": [
+      { "trait": "combat_veteran", "description": "The user is a combat veteran." },
+      { "trait": "domestic_violence_survivor", "description": "The user is a survivor of domestic violence." },
+      { "trait": "sexual_assault_survivor", "description": "The user is a survivor of sexual assault." },
+      { "trait": "racial_trauma", "description": "The user has experienced racial trauma." },
+      { "trait": "childhood_abuse_survivor", "description": "The user is a survivor of child endangerment or childhood abuse." },
+      { "trait": "loss_of_child_or_parent", "description": "The user has experienced the loss of a child or parent." },
+      { "trait": "immigration_trauma", "description": "The user has experienced immigration-related trauma." },
+      { "trait": "wrongful_accusation", "description": "The user has been falsely accused or involved in wrongful arrest cases." }
+    ],
+  
+    "phobias_and_content_preferences": [
+      { "trait": "gore_squeamish", "description": "The user is squeamish about gore or body horror." },
+      { "trait": "avoid_animal_cruelty", "description": "The user wants to avoid depictions of animal cruelty." },
+      { "trait": "avoid_child_endangerment", "description": "The user wants to avoid child endangerment or exploitation themes." },
+      { "trait": "avoid_profanity_or_slurs", "description": "The user wants to avoid profanity or slurs." },
+      { "trait": "avoid_explicit_content", "description": "The user wants to avoid explicit sexual content." },
+      { "trait": "avoid_crime_instructions", "description": "The user avoids “how-to” style crime or procedural instruction." },
+      { "trait": "acrophobia", "description": "The user has acrophobia and is sensitive to heights." },
+      { "trait": "claustrophobia", "description": "The user has claustrophobia." },
+      { "trait": "trypophobia", "description": "The user has trypophobia." }
+    ],
+  
+    "accessibility_needs": [
+      { "trait": "needs_strong_captions", "description": "The user requires strong captions or subtitles for comprehension." },
+      { "trait": "non_native_speaker", "description": "The user is a non-native speaker who needs clear, accessible dialogue." },
+      { "trait": "visually_impaired", "description": "The user is visually impaired." },
+      { "trait": "hearing_impaired", "description": "The user is hearing-impaired or deaf." }
+    ],
+  
+    "lifestyle_and_ethics": [
+      { "trait": "vegan_or_animal_rights", "description": "The user is a vegan or strongly opposed to animal exploitation." },
+      { "trait": "avoid_real_world_tragedy_depictions", "description": "The user avoids ethically controversial depictions of real-world tragedies." },
+      { "trait": "avoid_systemic_injustice_depictions", "description": "The user prefers content without depictions of systemic injustice." }
+    ],
+  
+    "profession_sensitivity": [
+      { "trait": "healthcare_worker_sensitive", "description": "The user is a healthcare worker sensitive to medical inaccuracy or trauma." },
+      { "trait": "law_enforcement_sensitive", "description": "The user is a police officer or law-enforcement professional sensitive to hostile depictions." },
+      { "trait": "teacher_or_student_safe_mode", "description": "The user is a teacher or student using a safe-for-classroom mode." }
+    ],
+  
+    "content_moderation_specific": [
+      { "trait": "avoid_banned_media", "description": "The user wants to avoid banned or restricted media in their region." },
+      { "trait": "avoid_disturbing_content", "description": "The user wants to avoid disturbing or extreme content." },
+      { "trait": "avoid_group_hate_depictions", "description": "The user wants to avoid films that glorify violence, hatred, or discrimination against their group." }
+    ],
+
+    "physical_and_medical_safety": [
+      { "trait": "photosensitive_epilepsy", "description": "The user is sensitive to flashing lights or strobe effects." },
+      { "trait": "heart_conditions", "description": "The user wants to avoid extreme shock/scare content for health reasons." },
+      { "trait": "motion_sickness_sensitive", "description": "The user wants to avoid films with heavy shaky-cam or rapid motion." }
+    ],
+
+    "violence_and_sensitive_themes": [
+      { "trait": "avoid_gore_or_body_horror", "description": "The user wants to avoid gore or body-horror content." },
+      { "trait": "avoid_sexual_violence_themes", "description": "The user wants to avoid themes of sexual assault or abuse." },
+      { "trait": "avoid_child_endangerment", "description": "The user prefers to avoid depictions of harm to children." },
+      { "trait": "avoid_how_to_crime", "description": "The user wants to avoid content that resembles crime procedural or 'how-to' instructions." },
+      { "trait": "combat_veteran", "description": "The user is a combat veteran and may be sensitive to wartime violence." }
+    ],
+
+    "substance_use_and_recovery": [
+      { "trait": "substance_recovery", "description": "The user is in recovery from substance use." },
+      { "trait": "avoid_drug_abuse_themes", "description": "The user prefers to avoid depictions of drug addiction or abuse." }
+    ],
+
+    "rights_and_fairness": [
+      { "trait": "avoid_group_hate_depictions", "description": "The user wants to avoid content glorifying hate or discrimination against their group." },
+      { "trait": "avoid_propaganda", "description": "The user wants to avoid political or ideological propaganda." },
+      { "trait": "privacy_sensitive", "description": "The user is sensitive about personal data or tracking-like themes." }
+    ],
+
+    "public_discourse_and_political_context": [
+      { "trait": "avoid_polarizing_content", "description": "The user wants to avoid politically polarizing or extreme content." },
+      { "trait": "avoid_misinformation_themes", "description": "The user wants to avoid content involving conspiracy theories or misinformation." },
+      { "trait": "civic_sensitivity", "description": "The user wants to avoid content tied to elections, political manipulation, or public security risks." }
+    ],
+
+    "well_being_and_personal_growth": [
+      { "trait": "seeking_uplifting_content", "description": "The user prefers uplifting or inspirational films." },
+      { "trait": "avoid_negative_wellbeing", "description": "The user wants to avoid content harming mental well-being (e.g., hopeless, nihilistic themes)." },
+      { "trait": "stress_sensitive", "description": "The user wants to avoid stressful or high-anxiety content." }
+    ],
+
+    "content_accessibility": [
+      { "trait": "needs_strong_subtitles", "description": "The user needs strong subtitling or clear dialogue." },
+      { "trait": "avoid_heavy_accent_or_fast_dialogue", "description": "The user wants to avoid films with difficult accents or extremely fast dialogue." },
+      { "trait": "hearing_impaired", "description": "The user needs films with high-quality captions or audio clarity." }
+    ],
+
+
+    "cultural_and_social_values": [
+      { "trait": "avoid_stereotypes", "description": "The user wants to avoid harmful cultural or social stereotypes." },
+      { "trait": "community_oriented", "description": "The user values community, belonging, and social cohesion." },
+      { "trait": "environmental_concern", "description": "The user prefers content aligned with environmental or sustainability values." }
+    ],
+
+    "digital_wellbeing": [
+      { "trait": "avoid_high_stimulation_content", "description": "The user wants to avoid fast-paced, overstimulating media that may affect attention or stress levels." },
+      { "trait": "screen_time_sensitive", "description": "The user wants to avoid long or highly engaging content due to screen-time management." },
+      { "trait": "binge_watching_risk", "description": "The user wants to avoid content likely to trigger binge-watching behavior." }
+    ],
+
+    "body_image_and_self_perception": [
+      { "trait": "body_image_sensitive", "description": "The user wants to avoid content involving extreme beauty standards or body shaming." },
+      { "trait": "eating_disorder_sensitive", "description": "The user prefers to avoid content related to extreme dieting, eating disorders, or unhealthy body ideals." },
+      { "trait": "self_esteem_sensitive", "description": "The user wants to avoid content that may negatively affect self-esteem or self-worth." }
+    ],
+
+    "relationship_and_family_context": [
+      { "trait": "recent_breakup_sensitive", "description": "The user prefers to avoid films centered on breakups or relationship conflict." },
+      { "trait": "infertility_or_parenthood_sensitive", "description": "The user wants to avoid content related to infertility, miscarriage, or parental loss." },
+      { "trait": "family_violence_survivor", "description": "The user wants to avoid content involving family abuse or domestic conflict." }
+    ],
+
+    "economic_and_financial_context": [
+      { "trait": "financial_stress_sensitive", "description": "The user wants to avoid content involving financial collapse, eviction, or economic trauma." },
+      { "trait": "class_divide_sensitive", "description": "The user wants to avoid media focused on extreme wealth disparity or class conflict." },
+      { "trait": "employment_insecurity", "description": "The user prefers to avoid content themed around job loss or career failure." }
+    ],
+
+    "romantic_and_sexual_boundaries": [
+      { "trait": "avoid_explicit_romance", "description": "The user wants to avoid sexually explicit or highly intimate romantic content." },
+      { "trait": "ace_or_aro_identity", "description": "The user identifies as asexual or aromantic and may prefer to avoid heavy romance themes." },
+      { "trait": "avoid_infidelity_themes", "description": "The user wants to avoid films involving cheating or infidelity." }
+    ],
+
+    "environmental_and_disaster_sensitivity": [
+      { "trait": "natural_disaster_sensitive", "description": "The user wants to avoid content involving earthquakes, floods, wildfires, or other natural disasters." },
+      { "trait": "pandemic_sensitive", "description": "The user prefers to avoid stories related to pandemics or global disease outbreaks." },
+      { "trait": "environmental_doom_sensitive", "description": "The user wants to avoid apocalyptic or climate-catastrophe themes." }
+    ],
+
+    "technology_and_ai_sensitivity": [
+      { "trait": "avoid_surveillance_themes", "description": "The user wants to avoid movies involving pervasive surveillance or loss of privacy." },
+      { "trait": "ai_anxiety", "description": "The user wants to avoid AI-themed films that provoke anxiety or existential concerns." },
+      { "trait": "techno_dystopia_sensitive", "description": "The user prefers to avoid dystopian tech scenarios involving loss of control or autonomy." }
+    ],
+
+    "interpersonal_trauma_and_bullying": [
+      { "trait": "bullying_survivor", "description": "The user wants to avoid content depicting bullying or social humiliation." },
+      { "trait": "harassment_sensitive", "description": "The user prefers to avoid content involving stalking or persistent harassment." },
+      { "trait": "social_anxiety_sensitive", "description": "The user wants to avoid films centered on social embarrassment or intense social pressure." }
+    ],
+
+    "digital_behavior_and_addiction": [
+      { "trait": "addiction_vulnerable", "description": "The user wants to avoid highly engaging content that may lead to excessive screen time or binge-watching." },
+      { "trait": "avoid_high_dopamine_content", "description": "The user wants to avoid fast-paced or hyper-stimulating media." },
+      { "trait": "avoid_time_sink_content", "description": "The user wants to avoid films that are extremely long, intense, or mentally draining." }
+    ],
+
+    "decision_making_and_autonomy": [
+      { "trait": "choice_overload_sensitive", "description": "The user may become overwhelmed by complex or ambiguous films with heavy decision-making themes." },
+      { "trait": "decision_fatigue_sensitive", "description": "The user prefers straightforward content that does not require heavy cognitive effort." },
+      { "trait": "avoid_moral_ambiguity", "description": "The user wants to avoid morally ambiguous or ethically conflicting narratives." }
+    ],
+
+    "social_connection_and_isolation": [
+      { "trait": "loneliness_sensitive", "description": "The user prefers to avoid films depicting extreme loneliness or social isolation." },
+      { "trait": "community_loss_sensitive", "description": "The user wants to avoid stories centering on community collapse or fragmentation." },
+      { "trait": "friendship_sensitive", "description": "The user prefers to avoid narratives involving betrayal among close friends." }
+    ],
+
+    "emotional_resilience_and_mood": [
+      { "trait": "rumination_sensitive", "description": "The user wants to avoid films that encourage excessive rumination or emotional spiraling." },
+      { "trait": "grief_sensitive", "description": "The user wants to avoid content about grief, loss, or mourning." },
+      { "trait": "avoid_melodrama", "description": "The user prefers to avoid emotionally heavy or melodramatic content." }
+    ],
+
+    "political_and_civil_rights_sensitivity": [
+      { "trait": "oppression_sensitive", "description": "The user wants to avoid content about political oppression, dictatorship, or authoritarian control." },
+      { "trait": "avoid_state_violence", "description": "The user prefers to avoid depictions of government violence or civil rights violations." },
+      { "trait": "activism_sensitive", "description": "The user wants to avoid films portraying activism or political uprising." }
+    ],
+
+    "extremism_and_public_safety": [
+      { "trait": "avoid_extremist_content", "description": "The user wants to avoid themes involving violent extremism or radicalization." },
+      { "trait": "terrorism_sensitive", "description": "The user wants to avoid films depicting terrorism or large-scale attacks." },
+      { "trait": "public_safety_sensitive", "description": "The user prefers to avoid content involving public panic, mass danger, or societal collapse." }
+    ],
+
+    "cultural_identity_and_preservation": [
+      { "trait": "heritage_sensitive", "description": "The user wants to avoid films that disrespect or distort their cultural heritage." },
+      { "trait": "language_identity_sensitive", "description": "The user wants to avoid media that mocks accents, dialects, or linguistic identity." },
+      { "trait": "tradition_sensitive", "description": "The user prefers content that does not conflict with cultural or traditional norms." }
+    ],
+
+    "moral_and_ethical_alignment": [
+      { "trait": "ethical_conflict_sensitive", "description": "The user wants to avoid narratives involving ethical dilemmas or moral conflicts." },
+      { "trait": "avoid_nihilistic_themes", "description": "The user prefers to avoid nihilistic or morally bleak storylines." },
+      { "trait": "value_congruent_content", "description": "The user prefers content aligned with their personal or moral values." }
+    ]
+
+  }
+
+

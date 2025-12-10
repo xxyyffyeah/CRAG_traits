@@ -1,0 +1,6 @@
+.env
+large_pop_adj_07sym/*
+__MACOSX
+__pycache__
+data
+*.pyc
