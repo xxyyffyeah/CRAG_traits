@@ -12,7 +12,7 @@ if __name__ == '__main__':
     import evaluate_with_traits
 
     # Change to small test size
-    evaluate_with_traits.n_samples = 1
+    evaluate_with_traits.n_samples = 10
     evaluate_with_traits.K_list = [10]  # Fewer K values for testing
 
     print("\n" + "="*80)

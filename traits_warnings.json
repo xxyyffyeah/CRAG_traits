@@ -1,0 +1,102 @@
+[
+  {
+    "trait": "Animal lover (avoid animal harm/death)",
+    "prefer": [],
+    "avoid": ["Does a horse die","Does the dog die","Does a cat die","Does an animal die","Does a pet die","Are animals abused","Is there dog fighting","Is there a dead animal","Does a dragon die","Does a non-human character die"]
+  },
+  {
+    "trait": "Arachnophobia / reptile phobia",
+    "prefer": [],
+    "avoid": ["Are there spiders","Are there bugs","Are there snakes"]
+  },
+  {
+    "trait": "Anti-gore / squeamish",
+    "prefer": [],
+    "avoid": ["Is there excessive gore","Is there blood/gore","Is there body horror","Is there amputation","Is there finger/toe mutilation","Is there eye mutilation","Is there genital trauma/mutilation","Are any teeth damaged"]
+  },
+  {
+    "trait": "Avoid torture & extreme violence",
+    "prefer": [],
+    "avoid": ["Is someone tortured","Is someone burned alive","Is someone buried alive","Is there cannibalism","Is someone crushed to death","Does a head get squashed"]
+  },
+  {
+    "trait": "Sexual violence sensitive",
+    "prefer": [],
+    "avoid": ["Is someone sexually assaulted","Is someone raped onscreen","Is a minor sexualized","Is there bestiality","Are there incestuous relationships"]
+  },
+  {
+    "trait": "Kid-safety / child harm sensitive",
+    "prefer": [],
+    "avoid": ["Does a kid die","Is a child abused","Is a child abandoned by a parent","Is an infant abducted","Is someone kidnapped"]
+  },
+  {
+    "trait": "Domestic abuse / stalking sensitive",
+    "prefer": [],
+    "avoid": ["Is there domestic violence","Is someone stalked","Is someone gaslighted","Is someone restrained","Is someone kidnapped"]
+  },
+  {
+    "trait": "Substance recovery / avoid drugs & alcohol",
+    "prefer": [],
+    "avoid": ["Is there addiction","Does someone use drugs","Does someone abuse alcohol","Does someone overdose","Is someone drugged"]
+  },
+  {
+    "trait": "Self-harm & suicide sensitive",
+    "prefer": [],
+    "avoid": ["Does someone die by suicide","Does someone attempt suicide","Does someone self harm","Does someone say \"I'll kill myself\""]
+  },
+  {
+    "trait": "Mental health portrayal sensitive",
+    "prefer": [],
+    "avoid": ["Is there a mental institution scene","Is a mentally ill person violent","Does someone suffer from PTSD","Are there anxiety attacks","Is there D.I.D. misrepresentation"]
+  },
+  {
+    "trait": "Medical/health trauma avoider",
+    "prefer": [],
+    "avoid": ["Is there a hospital scene","Does someone have cancer","Does someone have a chronic illness","Does someone have a stroke","Is there dementia/Alzheimer's"]
+  },
+  {
+    "trait": "Needle/medical procedure phobia",
+    "prefer": [],
+    "avoid": ["Are needles/syringes used","Is electro-therapy used","Is there a hospital scene"]
+  },
+  {
+    "trait": "Claustrophobia / breathing distress sensitive",
+    "prefer": [],
+    "avoid": ["Is there a claustrophobic scene","Does someone struggle to breathe","Does someone asphyxiate","Does someone becomes unconscious"]
+  },
+  {
+    "trait": "Photosensitivity & motion sickness",
+    "prefer": [],
+    "avoid": ["Are there flashing lights or images","Is there shakey cam","Are there jumpscares"]
+  },
+  {
+    "trait": "Hate speech / slur-sensitive",
+    "prefer": [],
+    "avoid": ["Is there hate speech","Are there homophobic slurs","Are there n-words","Is there antisemitism","Is there ableist language or behavior","Is the R word used"]
+  },
+  {
+    "trait": "Gender/LGBTQ respect sensitive",
+    "prefer": [],
+    "avoid": ["Is someone misgendered","Does an LGBT person die","Are there \"Man in a dress\" jokes"]
+  },
+  {
+    "trait": "Pregnancy/infant-loss sensitive",
+    "prefer": [],
+    "avoid": ["Are there abortions","Is a baby stillborn","Does someone miscarry","Is there childbirth","Does a pregnant person die","Does a baby cry"]
+  },
+  {
+    "trait": "Disaster/accident avoider",
+    "prefer": [],
+    "avoid": ["Does a car crash","Does a plane crash","Is there a nuclear explosion","Is someone hit by a car","Is there gun violence"]
+  },
+  {
+    "trait": "Happy-ending preference",
+    "prefer": [],
+    "avoid": ["Does it have a sad ending","Does someone sacrifice themselves","Does a parent die"]
+  },
+  {
+    "trait": "Horror fan (seeks scares & supernatural)",
+    "prefer": ["Are there ghosts","Is someone possessed","Are there clowns","Are there jumpscares","Is there blood/gore","Is there excessive gore"],
+    "avoid": []
+  }
+]

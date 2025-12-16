@@ -7,6 +7,7 @@ import threading
 import datetime
 import multiprocessing
 import re
+import shutil
 
 from tqdm import tqdm
 from pprint import pprint
@@ -17,7 +18,7 @@ from collections import defaultdict
 import openai
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt  # Removed: No longer generating plots
 from editdistance import eval as distance
 
 from libs.utils import extract_movie_name, process_item_raw
@@ -48,7 +49,6 @@ else:
 
 ### Path and model configuration
 model = "gpt-4o"
-evaluation_trait_model = "gpt-5.1"
 method = "CRAG_with_traits"
 dataset = "reddit"
 version = "_with_titles"
@@ -124,22 +124,39 @@ prompt_reflect_rec_titles_with_trait = (
     "System:"
 )
 
-prompt_trait_alignment = (
-    "You are an expert movie recommendation evaluator.\n"
-    "Given a user's personal trait and a list of recommended movies, "
-    "you need to judge whether the recommendations are appropriate and aligned with the user's trait.\n\n"
-    "Personal Trait: {trait}\n\n"
-    "Recommended Movies (in order):\n{movie_list}\n\n"
-    "Please evaluate whether these recommendations are suitable for a user with the given trait. "
-    "Consider whether the movies avoid content that might be inappropriate, triggering, or unsuitable for this user.\n\n"
-    "Rate the overall alignment on a scale of 1-5:\n"
-    "1 - Very Poor: Multiple recommendations are highly inappropriate\n"
-    "2 - Poor: Several recommendations are unsuitable\n"
-    "3 - Acceptable: Some issues but mostly appropriate\n"
-    "4 - Good: Recommendations are well-aligned\n"
-    "5 - Excellent: All recommendations perfectly respect the trait\n\n"
-    "Reply with ONLY a single number (1-5) followed by a brief explanation (one sentence).\n"
-    "Format: RATING####EXPLANATION\n"
+prompt_semantic_trait_matching = (
+    "You are an expert at matching user conversations to personal traits for movie recommendations.\n\n"
+    "TASK: Analyze the following user conversation and determine which ONE trait from the provided list "
+    "best matches the user's preferences. Identify which specific prefer/avoid themes match the conversation.\n\n"
+    "USER CONVERSATION:\n{conversation}\n\n"
+    "AVAILABLE TRAITS (130 total):\n{traits_list}\n\n"
+    "INSTRUCTIONS:\n"
+    "1. Read the user's conversation carefully to understand their movie preferences\n"
+    "2. Choose the SINGLE best matching trait from the list\n"
+    "3. Identify which specific 'Prefer' themes from that trait match what the user is looking for\n"
+    "4. Identify which 'Avoid' themes the user mentions wanting to avoid (if any are mentioned in conversation)\n"
+    "5. Provide detailed reasoning for each matched prefer/avoid item\n\n"
+    "OUTPUT FORMAT (JSON only, no extra text):\n"
+    "{{\n"
+    '  "matched_trait_id": "trait_name",\n'
+    '  "confidence": 0.85,\n'
+    '  "matched_prefer_items": ["Prefer theme 1", "Prefer theme 2"],\n'
+    '  "prefer_reasoning": {{\n'
+    '    "Prefer theme 1": "User explicitly requested X which aligns with this theme",\n'
+    '    "Prefer theme 2": "Conversation mentions Y which relates to this preference"\n'
+    '  }},\n'
+    '  "matched_avoid_items": ["Avoid theme 1"],\n'
+    '  "avoid_reasoning": {{\n'
+    '    "Avoid theme 1": "User wants to avoid Z"\n'
+    '  }},\n'
+    '  "overall_reasoning": "Summary of why this trait is the best match overall"\n'
+    "}}\n\n"
+    "IMPORTANT: \n"
+    "- matched_trait_id must exactly match a trait ID from the list\n"
+    "- matched_prefer_items should list prefer themes from the selected trait that match the conversation\n"
+    "- matched_avoid_items should only include avoid themes if the user explicitly mentions avoiding them\n"
+    "- If no avoid themes are mentioned, use an empty list: []\n"
+    "- Return ONLY valid JSON\n"
     "System:"
 )
 
@@ -167,18 +184,43 @@ def load_traits(traits_file='traits.json'):
     return all_traits
 
 
+def load_traits_full(traits_file='traits.json'):
+    """
+    Load traits.json with complete information including avoid/prefer lists
+
+    Returns:
+        list: List of trait dictionaries with all fields (category, trait, description, avoid, prefer)
+    """
+    with open(traits_file, 'r') as f:
+        traits_data = json.load(f)
+
+    all_traits = []
+    for category, trait_list in traits_data.items():
+        for trait_obj in trait_list:
+            all_traits.append({
+                'category': category,
+                'trait': trait_obj['trait'],
+                'description': trait_obj['description'],
+                'avoid': trait_obj.get('avoid', []),
+                'prefer': trait_obj.get('prefer', [])
+            })
+
+    print(f"Loaded {len(all_traits)} traits with full semantic information from {len(traits_data)} categories")
+    return all_traits
+
+
 def sample_test_data_with_traits(test_data, all_traits, n_samples=100, random_seed=42):
     """
-    Sample n_samples from test_data and assign a random trait to each
+    Sample n_samples from test_data and semantically match the best trait to each
 
     Args:
         test_data: Full test dataset
-        all_traits: List of trait dictionaries
+        all_traits: List of trait dictionaries (not used, kept for backward compatibility)
         n_samples: Number of samples to select
         random_seed: Random seed for reproducibility
 
     Returns:
-        list: Sampled data with assigned traits
+        list: Sampled data with semantically matched traits
     """
     np.random.seed(random_seed)
     random.seed(random_seed)
@@ -186,24 +228,247 @@ def sample_test_data_with_traits(test_data, all_traits, n_samples=100, random_se
     total_samples = len(test_data)
     print(f"Sampling {n_samples} from {total_samples} total samples...")
 
+    # KEEP EXISTING: Random sampling of test items
     sampled_indices = np.random.choice(total_samples, min(n_samples, total_samples), replace=False)
     sampled_data = [deepcopy(test_data[i]) for i in sampled_indices]
 
-    for item in sampled_data:
-        random_trait = random.choice(all_traits)
-        item['assigned_trait'] = random_trait['description']
-        item['assigned_trait_name'] = random_trait['trait']
-        item['assigned_trait_category'] = random_trait['category']
+    print(f"Sampled {len(sampled_data)} items")
 
+    # NEW: Load full trait information with avoid/prefer lists
+    print("\nLoading complete trait information for semantic matching...")
+    all_traits_full = load_traits_full('traits.json')
+
+    # NEW: Semantic matching instead of random assignment
+    sampled_data = semantic_match_traits(
+        sampled_data,
+        all_traits_full,
+        model='gpt-5.1',
+        temperature=0.3,  # Lower temp for more deterministic matching
+        max_tokens=300,
+        n_threads=500
+    )
+
+    return sampled_data
+
+
+def format_traits_for_prompt(all_traits):
+    """
+    Format all traits into a compact, readable format for the GPT-5.1 prompt
+
+    Args:
+        all_traits: List of trait dictionaries with full information
+
+    Returns:
+        str: Formatted traits list
+    """
+    lines = []
+    for i, trait in enumerate(all_traits, 1):
+        # Take first 3 items from avoid/prefer to save tokens
+        avoid_str = ", ".join(trait['avoid'][:3]) if trait['avoid'] else "N/A"
+        prefer_str = ", ".join(trait['prefer'][:3]) if trait['prefer'] else "N/A"
+
+        lines.append(
+            f"{i}. [{trait['trait']}] {trait['description']} "
+            f"| Avoid: {avoid_str}... | Prefer: {prefer_str}..."
+        )
+
+    return "\n".join(lines)
+
+
+def semantic_match_traits(sampled_data, all_traits_full, model='gpt-5.1',
+                         temperature=0.3, max_tokens=300, n_threads=500):
+    """
+    Use GPT-5.1 to semantically match each sampled conversation to the best trait
+
+    Args:
+        sampled_data: List of sampled test items
+        all_traits_full: List of all traits with complete information
+        model: Model to use for matching (default: gpt-5.1)
+        temperature: Temperature for API calls (lower = more deterministic)
+        max_tokens: Max tokens for response
+        n_threads: Number of concurrent threads
+
+    Returns:
+        list: sampled_data with semantically matched traits assigned
+    """
+    print(f"\n{'='*60}")
+    print("SEMANTIC TRAIT MATCHING WITH GPT-5.1")
+    print(f"{'='*60}")
+    print(f"Matching {len(sampled_data)} conversations to {len(all_traits_full)} traits...")
+    print(f"Using model: {model}")
+    print(f"Expected API calls: {len(sampled_data)}")
+
+    # Format traits list once (same for all conversations)
+    traits_formatted = format_traits_for_prompt(all_traits_full)
+
+    # Create trait lookup by trait name for fast assignment
+    trait_lookup = {t['trait']: t for t in all_traits_full}
+
+    # Threading setup (following existing pattern from lines 332-350)
+    EXSTING = {}
+    threads, results = [], []
+
+    for i, item in enumerate(tqdm(sampled_data,
+                                  total=len(sampled_data),
+                                  desc="Semantic trait matching...")):
+        # Format conversation (following pattern from line 306)
+        conversation = "\n".join([": ".join(rnd) for rnd in item['context_raw']])
+
+        # Prepare input for prompt
+        input_text = {
+            "conversation": conversation,
+            "traits_list": traits_formatted
+        }
+
+        # Create thread for API call (following pattern from lines 332-334)
+        execute_thread = threading.Thread(
+            target=get_response,
+            args=(i, input_text, prompt_semantic_trait_matching,
+                  model, temperature, max_tokens, results, EXSTING)
+        )
+
+        time.sleep(0.02)  # Rate limiting
+        threads.append(execute_thread)
+        execute_thread.start()
+
+        # Batch processing (following pattern from lines 340-350)
+        if len(threads) == n_threads:
+            for execute_thread in threads:
+                execute_thread.join()
+
+            # Process results batch
+            for res in results:
+                index = res["index"]
+                sampled_data[index]["semantic_trait_match_raw"] = res
+
+            threads = []
+            results = []
+            time.sleep(0)
+
+    # Process remaining threads (following pattern from lines 352-358)
+    if len(threads) > 0:
+        for execute_thread in threads:
+            execute_thread.join()
+
+        for res in results:
+            index = res["index"]
+            sampled_data[index]["semantic_trait_match_raw"] = res
+
+    # Parse results and assign traits (following pattern from lines 639-668)
+    print("\nParsing semantic matching results...")
+    successful_matches = 0
+    fallback_matches = 0
+    random_fallbacks = 0
+
+    for i, item in enumerate(sampled_data):
+        try:
+            # Extract response
+            raw_response = item["semantic_trait_match_raw"]['resp']['choices'][0]['message']['content']
+
+            # Parse JSON (primary method)
+            try:
+                # Clean response - remove markdown code blocks if present
+                cleaned = raw_response.strip()
+                if cleaned.startswith("```json"):
+                    cleaned = cleaned[7:]
+                if cleaned.startswith("```"):
+                    cleaned = cleaned[3:]
+                if cleaned.endswith("```"):
+                    cleaned = cleaned[:-3]
+                cleaned = cleaned.strip()
+
+                match_data = json.loads(cleaned)
+                matched_trait_id = match_data.get('matched_trait_id', '').strip()
+                confidence = match_data.get('confidence', 0.0)
+
+                # NEW: Extract prefer/avoid items and reasoning
+                matched_prefer_items = match_data.get('matched_prefer_items', [])
+                prefer_reasoning = match_data.get('prefer_reasoning', {})
+                matched_avoid_items = match_data.get('matched_avoid_items', [])
+                avoid_reasoning = match_data.get('avoid_reasoning', {})
+                overall_reasoning = match_data.get('overall_reasoning', match_data.get('reasoning', ''))
+
+                # Validate trait exists
+                if matched_trait_id in trait_lookup:
+                    matched_trait = trait_lookup[matched_trait_id]
+                    item['assigned_trait'] = matched_trait['description']
+                    item['assigned_trait_name'] = matched_trait['trait']
+                    item['assigned_trait_category'] = matched_trait['category']
+                    item['semantic_match_confidence'] = confidence
+                    item['semantic_match_reasoning'] = overall_reasoning
+                    item['semantic_match_method'] = 'json_parse'
+                    # NEW: Store prefer/avoid details
+                    item['matched_prefer_items'] = matched_prefer_items
+                    item['prefer_reasoning'] = prefer_reasoning
+                    item['matched_avoid_items'] = matched_avoid_items
+                    item['avoid_reasoning'] = avoid_reasoning
+                    successful_matches += 1
+                else:
+                    # Trait ID not found - use fallback
+                    raise ValueError(f"Invalid trait ID: {matched_trait_id}")
+
+            except (json.JSONDecodeError, ValueError, KeyError) as e:
+                # Fallback: try to extract trait name from text
+                print(f"  Warning: JSON parse failed for item {i}, trying fallback...")
+
+                # Search for any trait name in the response
+                found_trait = None
+                for trait_name in trait_lookup.keys():
+                    if trait_name.lower() in raw_response.lower():
+                        found_trait = trait_name
+                        break
+
+                if found_trait and found_trait in trait_lookup:
+                    matched_trait = trait_lookup[found_trait]
+                    item['assigned_trait'] = matched_trait['description']
+                    item['assigned_trait_name'] = matched_trait['trait']
+                    item['assigned_trait_category'] = matched_trait['category']
+                    item['semantic_match_confidence'] = 0.5  # Lower confidence for fallback
+                    item['semantic_match_reasoning'] = f"Fallback match from response text - detailed analysis unavailable"
+                    item['semantic_match_method'] = 'text_search'
+                    # NEW: Set empty lists for prefer/avoid when fallback is used
+                    item['matched_prefer_items'] = []
+                    item['prefer_reasoning'] = {}
+                    item['matched_avoid_items'] = []
+                    item['avoid_reasoning'] = {}
+                    fallback_matches += 1
+                else:
+                    # Ultimate fallback: random assignment
+                    raise ValueError("No trait found in response")
+
+        except Exception as e:
+            # Ultimate fallback: assign random trait (following existing pattern from line 193)
+            print(f"  Error for item {i}: {e}. Using random fallback.")
+            random_trait = random.choice(all_traits_full)
+            item['assigned_trait'] = random_trait['description']
+            item['assigned_trait_name'] = random_trait['trait']
+            item['assigned_trait_category'] = random_trait['category']
+            item['semantic_match_confidence'] = 0.0
+            item['semantic_match_reasoning'] = f"Random fallback due to parsing error"
+            item['semantic_match_method'] = 'random_fallback'
+            # NEW: Set empty lists for prefer/avoid when random fallback is used
+            item['matched_prefer_items'] = []
+            item['prefer_reasoning'] = {}
+            item['matched_avoid_items'] = []
+            item['avoid_reasoning'] = {}
+            random_fallbacks += 1
+
+    print(f"\nMatching Results:")
+    print(f"  Successful JSON matches: {successful_matches}/{len(sampled_data)}")
+    print(f"  Fallback text matches: {fallback_matches}/{len(sampled_data)}")
+    print(f"  Random fallbacks: {random_fallbacks}/{len(sampled_data)}")
+
+    # Print trait distribution (following pattern from lines 198-206)
     trait_counts = defaultdict(int)
     category_counts = defaultdict(int)
     for item in sampled_data:
         trait_counts[item['assigned_trait_name']] += 1
         category_counts[item['assigned_trait_category']] += 1
 
-    print(f"Sampled {len(sampled_data)} items")
-    print(f"Unique traits assigned: {len(trait_counts)}")
-    print(f"Categories represented: {len(category_counts)}")
+    print(f"\nTrait Distribution After Semantic Matching:")
+    print(f"  Unique traits used: {len(trait_counts)}/{len(all_traits_full)}")
+    print(f"  Categories represented: {len(category_counts)}")
+    print(f"  Most common traits: {sorted(trait_counts.items(), key=lambda x: x[1], reverse=True)[:5]}")
 
     return sampled_data
 
@@ -420,7 +685,7 @@ def recommend_zero_shot_with_trait(test_data_with_rec):
     return test_data_with_rec
 
 
-def recommend_with_retrieval_with_trait(test_data_with_rec):
+def recommend_with_retrieval_with_trait(test_data_with_rec, save_dir):
     """
     This module conducts the CRAG recommendation with
     retrieved items as extra collaborative information (with trait)
@@ -486,10 +751,6 @@ def recommend_with_retrieval_with_trait(test_data_with_rec):
     for K in K_list:
         test_data_with_rec = [process_item_raw(item, K) for item in test_data_with_rec]
 
-    save_dir = "results/trait_evaluation"
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
     save_file = os.path.join(save_dir, "test_with_traits_retrieval.pkl")
     with open(save_file, "wb") as f:
         pickle.dump(test_data_with_rec, f)
@@ -499,7 +760,7 @@ def recommend_with_retrieval_with_trait(test_data_with_rec):
     return test_data_with_rec
 
 
-def reflect_and_rerank_with_trait(test_data_with_rec):
+def reflect_and_rerank_with_trait(test_data_with_rec, save_dir):
     """
     This module reflects upon the final recommendation list
     and rerank them based on the relevance score (with trait).
@@ -564,10 +825,6 @@ def reflect_and_rerank_with_trait(test_data_with_rec):
         test_data_with_rec = [item[1] for item in test_data_with_rec]
         print(f"# errors for {K}: {len(errors)}")
 
-    save_dir = "results/trait_evaluation"
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
     save_file = os.path.join(save_dir, "test_with_traits_rerank.pkl")
     with open(save_file, "wb") as f:
         pickle.dump(test_data_with_rec, f)
@@ -575,120 +832,6 @@ def reflect_and_rerank_with_trait(test_data_with_rec):
     print(f"results saved to: {save_file}!")
 
     return test_data_with_rec
-
-
-def evaluate_trait_alignment(test_data_with_rec):
-    """
-    Use GPT-4o to evaluate whether recommendations align with personal trait
-    """
-    K_list_extended = [0] + K_list
-
-    for K in K_list_extended:
-        print(f"-----Evaluating Trait Alignment (K={K})-----")
-
-        EXSTING = {}
-        threads, results = [], []
-
-        for i, item in enumerate(tqdm(test_data_with_rec,
-                                    total=len(test_data_with_rec),
-                                    desc=f"Evaluating trait alignment - K={K}...")):
-            trait = item['assigned_trait']
-
-            if f"rec_after_reflect_{K}" in item and item[f"rec_after_reflect_{K}"]:
-                rec_list = item[f"rec_after_reflect_{K}"][:20]
-            elif f"rec_list_raw_{K}" in item and item[f"rec_list_raw_{K}"]:
-                rec_list = item[f"rec_list_raw_{K}"][:20]
-            else:
-                continue
-
-            movie_list = "\n".join([f"{idx+1}. {movie}" for idx, movie in enumerate(rec_list)])
-
-            input_text = {
-                "trait": trait,
-                "movie_list": movie_list
-            }
-
-            execute_thread = threading.Thread(
-                target=get_response,
-                args=(i, input_text, prompt_trait_alignment, evaluation_trait_model, temperature, 128, results, EXSTING)
-            )
-
-            time.sleep(0.02)
-            threads.append(execute_thread)
-            execute_thread.start()
-
-            if len(threads) == n_threads:
-                for execute_thread in threads:
-                    execute_thread.join()
-
-                for res in results:
-                    index = res["index"]
-                    test_data_with_rec[index][f"trait_alignment_{K}"] = res
-
-                threads = []
-                results = []
-
-        if len(threads) > 0:
-            for execute_thread in threads:
-                execute_thread.join()
-
-            for res in results:
-                index = res["index"]
-                test_data_with_rec[index][f"trait_alignment_{K}"] = res
-
-    for K in K_list_extended:
-        for item in test_data_with_rec:
-            if f"trait_alignment_{K}" not in item:
-                item[f"trait_alignment_score_{K}"] = 3
-                item[f"trait_alignment_explanation_{K}"] = "No evaluation"
-                continue
-
-            raw_response = item[f"trait_alignment_{K}"]['resp']['choices'][0]['message']['content']
-            try:
-                parts = raw_response.strip().split("####")
-                if len(parts) >= 1:
-                    rating = int(parts[0].strip())
-                    rating = max(1, min(5, rating))
-                    explanation = parts[1].strip() if len(parts) > 1 else ""
-                    item[f"trait_alignment_score_{K}"] = rating
-                    item[f"trait_alignment_explanation_{K}"] = explanation
-                else:
-                    match = re.search(r'(\d)', raw_response)
-                    if match:
-                        rating = int(match.group(1))
-                        rating = max(1, min(5, rating))
-                        item[f"trait_alignment_score_{K}"] = rating
-                        item[f"trait_alignment_explanation_{K}"] = raw_response
-                    else:
-                        item[f"trait_alignment_score_{K}"] = 3
-                        item[f"trait_alignment_explanation_{K}"] = "Parse failed"
-            except:
-                item[f"trait_alignment_score_{K}"] = 3
-                item[f"trait_alignment_explanation_{K}"] = "Parse error"
-
-    return test_data_with_rec
-
-
-def compute_trait_metrics(test_data_with_rec):
-    """
-    Compute aggregated trait alignment metrics
-    """
-    K_list_extended = [0] + K_list
-    trait_metrics = {}
-
-    for K in K_list_extended:
-        scores = [item.get(f"trait_alignment_score_{K}", 3) for item in test_data_with_rec]
-
-        trait_metrics[K] = {
-            'mean_alignment': np.mean(scores),
-            'std_alignment': np.std(scores),
-            'median_alignment': np.median(scores),
-            'excellent_rate': sum(s == 5 for s in scores) / len(scores),
-            'good_or_better_rate': sum(s >= 4 for s in scores) / len(scores),
-            'poor_or_worse_rate': sum(s <= 2 for s in scores) / len(scores),
-        }
-
-    return trait_metrics
 
 
 def post_processing(test_data_with_rec):
@@ -804,9 +947,9 @@ def evaluate_with_rerank(test_data_with_rec_filtered):
         print(f"top-K ndcgs: {avg_ndcgs_reflect_rerank}\n")
 
 
-def print_comprehensive_results(test_data_with_rec, trait_metrics):
+def print_comprehensive_results(test_data_with_rec):
     """
-    Print comprehensive results including traditional metrics and trait alignment
+    Print comprehensive results including traditional metrics
     """
     K_list_extended = [0] + K_list
 
@@ -829,148 +972,8 @@ def print_comprehensive_results(test_data_with_rec, trait_metrics):
             print(f"\nRecall@k (with rerank): {recalls}")
             print(f"NDCG@k (with rerank): {ndcgs}")
 
-        if K in trait_metrics:
-            print(f"\nTrait Alignment Metrics:")
-            tm = trait_metrics[K]
-            print(f"  Mean alignment score: {tm['mean_alignment']:.3f} ± {tm['std_alignment']:.3f}")
-            print(f"  Median alignment score: {tm['median_alignment']:.1f}")
-            print(f"  Excellent rate (score=5): {tm['excellent_rate']*100:.1f}%")
-            print(f"  Good or better rate (score>=4): {tm['good_or_better_rate']*100:.1f}%")
-            print(f"  Poor or worse rate (score<=2): {tm['poor_or_worse_rate']*100:.1f}%")
 
-
-def plot_trait_comparison(trait_metrics, test_data_with_rec, save_dir="results/trait_evaluation"):
-    """
-    Plot comprehensive comparison including trait alignment
-    """
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
-    K_values = [0] + K_list
-
-    fig = plt.figure(figsize=(16, 12))
-    gs = fig.add_gridspec(3, 1, hspace=0.3)
-
-    mean_scores = [trait_metrics[K]['mean_alignment'] for K in K_values]
-    std_scores = [trait_metrics[K]['std_alignment'] for K in K_values]
-
-    ax1 = fig.add_subplot(gs[0, 0])
-    x = np.arange(len(K_values))
-    ax1.bar(x, mean_scores, yerr=std_scores, capsize=5, alpha=0.7, color='skyblue', edgecolor='black')
-    ax1.set_xlabel('Number of Retrieved Items (K)', fontsize=12)
-    ax1.set_ylabel('Mean Trait Alignment Score (1-5)', fontsize=12)
-    ax1.set_title('Trait Alignment vs. Retrieval Count', fontsize=14, fontweight='bold')
-    ax1.set_xticks(x)
-    ax1.set_xticklabels([f'K={k}' for k in K_values])
-    ax1.set_ylim(1, 5)
-    ax1.axhline(y=3, color='r', linestyle='--', linewidth=2, label='Acceptable threshold')
-    ax1.axhline(y=4, color='g', linestyle='--', linewidth=2, label='Good threshold')
-    ax1.legend(fontsize=10)
-    ax1.grid(axis='y', alpha=0.3)
-
-    ax2 = fig.add_subplot(gs[1, 0])
-    score_distributions = {K: [0]*5 for K in K_values}
-    for K in K_values:
-        for item in test_data_with_rec:
-            score = item.get(f"trait_alignment_score_{K}", 3)
-            score_distributions[K][score-1] += 1
-
-    for K in K_values:
-        total = sum(score_distributions[K])
-        if total > 0:
-            score_distributions[K] = [count/total*100 for count in score_distributions[K]]
-
-    colors = ['#d62728', '#ff7f0e', '#ffdd57', '#2ca02c', '#1f77b4']
-    labels = ['Score 1 (Very Poor)', 'Score 2 (Poor)', 'Score 3 (Acceptable)',
-              'Score 4 (Good)', 'Score 5 (Excellent)']
-
-    bottom = np.zeros(len(K_values))
-    for score_idx in range(5):
-        values = [score_distributions[K][score_idx] for K in K_values]
-        ax2.bar(x, values, bottom=bottom, label=labels[score_idx],
-                color=colors[score_idx], alpha=0.8, edgecolor='black', linewidth=0.5)
-        bottom += values
-
-    ax2.set_xlabel('Number of Retrieved Items (K)', fontsize=12)
-    ax2.set_ylabel('Percentage (%)', fontsize=12)
-    ax2.set_title('Distribution of Trait Alignment Scores', fontsize=14, fontweight='bold')
-    ax2.set_xticks(x)
-    ax2.set_xticklabels([f'K={k}' for k in K_values])
-    ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize=10)
-    ax2.set_ylim(0, 100)
-    ax2.grid(axis='y', alpha=0.3)
-
-    ax3 = fig.add_subplot(gs[2, 0])
-    good_rates = [trait_metrics[K]['good_or_better_rate']*100 for K in K_values]
-    excellent_rates = [trait_metrics[K]['excellent_rate']*100 for K in K_values]
-    poor_rates = [trait_metrics[K]['poor_or_worse_rate']*100 for K in K_values]
-
-    width = 0.25
-    ax3.bar(x - width, excellent_rates, width, label='Excellent (5)', color='#1f77b4', alpha=0.8, edgecolor='black')
-    ax3.bar(x, good_rates, width, label='Good+ (≥4)', color='#2ca02c', alpha=0.8, edgecolor='black')
-    ax3.bar(x + width, poor_rates, width, label='Poor- (≤2)', color='#d62728', alpha=0.8, edgecolor='black')
-
-    ax3.set_xlabel('Number of Retrieved Items (K)', fontsize=12)
-    ax3.set_ylabel('Percentage (%)', fontsize=12)
-    ax3.set_title('Trait Alignment Quality Rates', fontsize=14, fontweight='bold')
-    ax3.set_xticks(x)
-    ax3.set_xticklabels([f'K={K}' for K in K_values])
-    ax3.legend(fontsize=10)
-    ax3.grid(axis='y', alpha=0.3)
-    ax3.set_ylim(0, 100)
-
-    plt.tight_layout()
-    fig.savefig(os.path.join(save_dir, "trait_evaluation_results.jpg"),
-                format='jpg', bbox_inches='tight', dpi=300)
-    print(f"\nPlot saved to: {os.path.join(save_dir, 'trait_evaluation_results.jpg')}")
-    plt.close()
-
-
-def plot_trait_by_category(test_data_with_rec, save_dir="results/trait_evaluation"):
-    """
-    Plot trait alignment by category
-    """
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
-    category_scores = defaultdict(list)
-
-    K_ref = 20 if 20 in K_list else K_list[len(K_list)//2]
-
-    for item in test_data_with_rec:
-        category = item.get('assigned_trait_category', 'unknown')
-        score = item.get(f'trait_alignment_score_{K_ref}', 3)
-        category_scores[category].append(score)
-
-    category_means = {cat: np.mean(scores) for cat, scores in category_scores.items()}
-    sorted_categories = sorted(category_means.items(), key=lambda x: x[1])
-
-    fig, ax = plt.subplots(figsize=(12, max(8, len(sorted_categories) * 0.4)))
-    categories = [cat.replace('_', ' ').title() for cat, _ in sorted_categories]
-    means = [score for _, score in sorted_categories]
-
-    y_pos = np.arange(len(categories))
-    colors = ['#d62728' if m < 3 else '#ff7f0e' if m < 4 else '#2ca02c' for m in means]
-
-    ax.barh(y_pos, means, alpha=0.8, color=colors, edgecolor='black')
-    ax.set_yticks(y_pos)
-    ax.set_yticklabels(categories, fontsize=9)
-    ax.set_xlabel('Mean Trait Alignment Score', fontsize=12)
-    ax.set_title(f'Trait Alignment by Category (K={K_ref})', fontsize=14, fontweight='bold')
-    ax.axvline(x=3, color='orange', linestyle='--', linewidth=2, label='Acceptable threshold')
-    ax.axvline(x=4, color='green', linestyle='--', linewidth=2, label='Good threshold')
-    ax.legend(fontsize=10)
-    ax.set_xlim(1, 5)
-    ax.grid(axis='x', alpha=0.3)
-
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, "trait_alignment_by_category.jpg"),
-                format='jpg', bbox_inches='tight', dpi=300)
-    print(f"Category plot saved to: {os.path.join(save_dir, 'trait_alignment_by_category.jpg')}")
-    plt.close()
-
-
-def save_detailed_log(test_data_with_rec, trait_metrics, save_dir="results/trait_evaluation"):
+def save_detailed_log(test_data_with_rec, save_dir="results"):
     """
     Save detailed evaluation log
     """
@@ -987,25 +990,11 @@ def save_detailed_log(test_data_with_rec, trait_metrics, save_dir="results/trait
 
         f.write(f"Evaluation Date: {datetime.datetime.now()}\n")
         f.write(f"Number of samples: {len(test_data_with_rec)}\n")
-        f.write(f"Trait Model: {evaluation_trait_model}\n")
+        f.write(f"Model: {model}\n")
         f.write(f"K values: {K_list}\n")
         f.write(f"Random seed: {random_seed}\n\n")
 
         f.write("="*80 + "\n")
-        f.write("OVERALL METRICS\n")
-        f.write("="*80 + "\n\n")
-
-        for K in [0] + K_list:
-            f.write(f"\n--- K={K} ---\n")
-            if K in trait_metrics:
-                tm = trait_metrics[K]
-                f.write(f"Mean alignment: {tm['mean_alignment']:.3f} ± {tm['std_alignment']:.3f}\n")
-                f.write(f"Median alignment: {tm['median_alignment']:.1f}\n")
-                f.write(f"Excellent rate: {tm['excellent_rate']*100:.1f}%\n")
-                f.write(f"Good+ rate: {tm['good_or_better_rate']*100:.1f}%\n")
-                f.write(f"Poor- rate: {tm['poor_or_worse_rate']*100:.1f}%\n")
-
-        f.write("\n\n" + "="*80 + "\n")
         f.write("SAMPLE-LEVEL DETAILS\n")
         f.write("="*80 + "\n\n")
 
@@ -1028,13 +1017,41 @@ def save_detailed_log(test_data_with_rec, trait_metrics, save_dir="results/trait
                     f.write(f"{speaker}: {content}\n")
                 f.write("-" * 60 + "\n\n")
 
+            # NEW: Add semantic matching details
+            f.write("--- Semantic Matching Details ---\n")
+            f.write(f"Matching Method: {item.get('semantic_match_method', 'N/A')}\n")
+            f.write(f"Confidence Score: {item.get('semantic_match_confidence', 'N/A')}\n\n")
+
+            # Matched prefer items
+            if 'matched_prefer_items' in item and item['matched_prefer_items']:
+                f.write(f"Matched PREFER Themes:\n")
+                prefer_reasoning = item.get('prefer_reasoning', {})
+                for pref_item in item['matched_prefer_items']:
+                    reason = prefer_reasoning.get(pref_item, 'No reason provided')
+                    f.write(f"  • {pref_item}\n")
+                    f.write(f"    Reason: {reason}\n")
+                f.write("\n")
+
+            # Matched avoid items
+            if 'matched_avoid_items' in item and item['matched_avoid_items']:
+                f.write(f"Matched AVOID Themes:\n")
+                avoid_reasoning = item.get('avoid_reasoning', {})
+                for avoid_item in item['matched_avoid_items']:
+                    reason = avoid_reasoning.get(avoid_item, 'No reason provided')
+                    f.write(f"  • {avoid_item}\n")
+                    f.write(f"    Reason: {reason}\n")
+                f.write("\n")
+
+            # Overall reasoning
+            if 'semantic_match_reasoning' in item and item['semantic_match_reasoning']:
+                f.write(f"Overall Matching Reasoning:\n")
+                f.write(f"  {item['semantic_match_reasoning']}\n\n")
+
             if f"rec_after_reflect_{K_ref}" in item:
                 f.write(f"Recommendations (K={K_ref}, after rerank):\n")
                 for idx, movie in enumerate(item[f"rec_after_reflect_{K_ref}"][:10]):
                     f.write(f"  {idx+1}. {movie}\n")
-
-            f.write(f"\nTrait Alignment Score: {item.get(f'trait_alignment_score_{K_ref}', 'N/A')}/5\n")
-            f.write(f"Explanation: {item.get(f'trait_alignment_explanation_{K_ref}', 'N/A')}\n")
+                f.write("\n")
 
             if 'groundtruth' in item:
                 f.write(f"\nGroundtruth (first 5): {item['groundtruth'][:5]}\n")
@@ -1042,18 +1059,14 @@ def save_detailed_log(test_data_with_rec, trait_metrics, save_dir="results/trait
     print(f"Detailed log saved to: {log_file}")
 
 
-def save_comprehensive_metrics(trait_metrics, save_dir="results/trait_evaluation"):
+def save_comprehensive_metrics(save_dir="results"):
     """
     Save all metrics to JSON files
     """
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    with open(os.path.join(save_dir, "trait_metrics.json"), 'w') as f:
-        json.dump(trait_metrics, f, indent=2)
-
     comprehensive = {
-        'trait_metrics': trait_metrics,
         'traditional_metrics': {
             'no_rerank': avg_metrics.get("No Reflect and Rerank", {}),
             'with_rerank': avg_metrics.get("With Reflect and Rerank", {})
@@ -1098,6 +1111,34 @@ def main():
     print("TRAIT-AWARE MOVIE RECOMMENDATION EVALUATION")
     print("="*80 + "\n")
 
+    # Create timestamped directory for this run
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    base_save_dir = "results"
+    timestamped_dir = os.path.join(base_save_dir, timestamp)
+    last_dir = os.path.join(base_save_dir, "last")
+
+    # Create directories
+    os.makedirs(timestamped_dir, exist_ok=True)
+
+    # Update or create 'last' directory
+    if os.path.islink(last_dir):
+        os.unlink(last_dir)
+    elif os.path.exists(last_dir):
+        shutil.rmtree(last_dir)
+
+    # Create symbolic link to timestamped directory
+    try:
+        os.symlink(timestamp, last_dir, target_is_directory=True)
+        print(f"Created timestamped directory: {timestamped_dir}")
+        print(f"'last' symlink points to: {timestamp}\n")
+    except OSError:
+        # If symlink creation fails (e.g., on Windows), copy instead
+        shutil.copytree(timestamped_dir, last_dir)
+        print(f"Created timestamped directory: {timestamped_dir}")
+        print(f"'last' directory will be updated at the end\n")
+
+    save_dir = timestamped_dir
+
     print("Step 1: Loading collaborative filtering model...")
     sim_mat, catalog_imdb_ids, imdb_id2row, imdb_id2col, col2imdb_id, id2name = load_and_process_cf_model()
 
@@ -1114,9 +1155,6 @@ def main():
     all_traits = load_traits('traits.json')
     test_data_with_rec = sample_test_data_with_traits(test_data_with_rec, all_traits, n_samples, random_seed)
 
-    save_dir = "results/trait_evaluation"
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
     with open(os.path.join(save_dir, "sampled_data_seed42.pkl"), "wb") as f:
         pickle.dump(test_data_with_rec, f)
     print(f"Sampled data saved!")
@@ -1128,54 +1166,49 @@ def main():
     test_data_with_rec = recommend_zero_shot_with_trait(test_data_with_rec)
 
     print("\nStep 7: Recommendation with retrieval and traits...")
-    test_data_with_rec = recommend_with_retrieval_with_trait(test_data_with_rec)
+    test_data_with_rec = recommend_with_retrieval_with_trait(test_data_with_rec, save_dir)
 
     print("\nStep 8: Reflect and rerank with traits...")
-    test_data_with_rec = reflect_and_rerank_with_trait(test_data_with_rec)
+    test_data_with_rec = reflect_and_rerank_with_trait(test_data_with_rec, save_dir)
 
-    print("\nStep 9: Evaluating trait alignment...")
-    test_data_with_rec = evaluate_trait_alignment(test_data_with_rec)
-
-    print("\nStep 10: Post-processing...")
+    print("\nStep 9: Post-processing...")
     test_data_with_rec = post_processing(test_data_with_rec)
     print(f"After post-processing: {len(test_data_with_rec)} samples with groundtruth")
 
-    print("\nStep 11: Computing trait metrics...")
-    trait_metrics = compute_trait_metrics(test_data_with_rec)
-
-    print("\nStep 12: Evaluating recommendations (no rerank)...")
+    print("\nStep 10: Evaluating recommendations (no rerank)...")
     evaluate_no_rerank(test_data_with_rec)
 
-    print("\nStep 13: Evaluating recommendations (with rerank)...")
+    print("\nStep 11: Evaluating recommendations (with rerank)...")
     evaluate_with_rerank(test_data_with_rec)
 
-    print("\nStep 14: Printing comprehensive results...")
-    print_comprehensive_results(test_data_with_rec, trait_metrics)
+    print("\nStep 12: Printing comprehensive results...")
+    print_comprehensive_results(test_data_with_rec)
 
-    print("\nStep 15: Generating visualizations...")
-    plot_trait_comparison(trait_metrics, test_data_with_rec, save_dir)
-    plot_trait_by_category(test_data_with_rec, save_dir)
-
-    print("\nStep 16: Saving results...")
+    print("\nStep 13: Saving results...")
     with open(os.path.join(save_dir, "test_with_traits_final.pkl"), "wb") as f:
         pickle.dump(test_data_with_rec, f)
 
-    save_comprehensive_metrics(trait_metrics, save_dir)
-    save_detailed_log(test_data_with_rec, trait_metrics, save_dir)
+    save_comprehensive_metrics(save_dir)
+    save_detailed_log(test_data_with_rec, save_dir)
+
+    # Update 'last' directory if not using symlink
+    if not os.path.islink(last_dir):
+        if os.path.exists(last_dir):
+            shutil.rmtree(last_dir)
+        shutil.copytree(timestamped_dir, last_dir)
 
     print("\n" + "="*80)
     print("EVALUATION COMPLETE!")
     print("="*80)
-    print(f"\nAll results saved to: {save_dir}/")
+    print(f"\nResults saved to:")
+    print(f"  - Timestamped: {timestamped_dir}/")
+    print(f"  - Latest: {last_dir}/")
     print("\nGenerated files:")
     print("  - sampled_data_seed42.pkl")
     print("  - test_with_traits_retrieval.pkl")
     print("  - test_with_traits_rerank.pkl")
     print("  - test_with_traits_final.pkl")
-    print("  - trait_metrics.json")
     print("  - comprehensive_metrics.json")
-    print("  - trait_evaluation_results.jpg")
-    print("  - trait_alignment_by_category.jpg")
     print("  - evaluation_log_<timestamp>.txt")
 
 

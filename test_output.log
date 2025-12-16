@@ -1,252 +1,0 @@
-
-================================================================================
-SMALL-SCALE TEST (10 samples, K=[5,10,15])
-================================================================================
-
-
-================================================================================
-TRAIT-AWARE MOVIE RECOMMENDATION EVALUATION
-================================================================================
-
-Step 1: Loading collaborative filtering model...
-
-Step 2: Loading test data...
-Loaded 5465 test samples
-
-Step 3: Pre-processing data...
-After preprocessing: 5073 samples
-
-Step 4: Loading traits and sampling...
-Loaded 130 traits from 35 categories
-Sampling 10 from 5073 total samples...
-Sampled 10 items
-Unique traits assigned: 9
-Categories represented: 10
-Sampled data saved!
-
-Step 5: Context-aware retrieval with traits...
------Context-aware Reflection (with Traits)-----
-reflecting on the retrieved titles - 5 raw retrieval...:   0%|          | 0/10 [00:00<?, ?it/s]reflecting on the retrieved titles - 5 raw retrieval...:  50%|█████     | 5/10 [00:00<00:00, 42.77it/s]reflecting on the retrieved titles - 5 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 42.58it/s]reflecting on the retrieved titles - 5 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 42.58it/s]
-reflecting on the retrieved titles - 10 raw retrieval...:   0%|          | 0/10 [00:00<?, ?it/s]reflecting on the retrieved titles - 10 raw retrieval...:  50%|█████     | 5/10 [00:00<00:00, 46.06it/s]reflecting on the retrieved titles - 10 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 45.98it/s]reflecting on the retrieved titles - 10 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 45.96it/s]
-reflecting on the retrieved titles - 15 raw retrieval...:   0%|          | 0/10 [00:00<?, ?it/s]reflecting on the retrieved titles - 15 raw retrieval...:  50%|█████     | 5/10 [00:00<00:00, 45.91it/s]reflecting on the retrieved titles - 15 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 45.85it/s]reflecting on the retrieved titles - 15 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 45.82it/s]
-# errors for 5: 0
-# errors for 10: 0
-# errors for 15: 0
-
-Step 6: Zero-shot recommendation with traits...
------Zero-shot Recommendation (with Traits)-----
-generating recommendations...:   0%|          | 0/10 [00:00<?, ?it/s]generating recommendations...:  40%|████      | 4/10 [00:00<00:00, 37.22it/s]generating recommendations...:  80%|████████  | 8/10 [00:00<00:00, 37.18it/s]generating recommendations...: 100%|██████████| 10/10 [00:00<00:00, 37.33it/s]
-
-Step 7: Recommendation with retrieval and traits...
------CF-Augmented Recommendation (with Traits)-----
-generating recommendations - 5 raw retrieval...:   0%|          | 0/10 [00:00<?, ?it/s]generating recommendations - 5 raw retrieval...:  40%|████      | 4/10 [00:00<00:00, 37.46it/s]generating recommendations - 5 raw retrieval...:  80%|████████  | 8/10 [00:00<00:00, 37.46it/s]generating recommendations - 5 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 37.51it/s]
------CF-Augmented Recommendation (with Traits)-----
-generating recommendations - 10 raw retrieval...:   0%|          | 0/10 [00:00<?, ?it/s]generating recommendations - 10 raw retrieval...:  40%|████      | 4/10 [00:00<00:00, 37.45it/s]generating recommendations - 10 raw retrieval...:  80%|████████  | 8/10 [00:00<00:00, 37.39it/s]generating recommendations - 10 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 37.52it/s]
------CF-Augmented Recommendation (with Traits)-----
-generating recommendations - 15 raw retrieval...:   0%|          | 0/10 [00:00<?, ?it/s]generating recommendations - 15 raw retrieval...:  40%|████      | 4/10 [00:00<00:00, 37.90it/s]generating recommendations - 15 raw retrieval...:  80%|████████  | 8/10 [00:00<00:00, 37.97it/s]generating recommendations - 15 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 37.89it/s]
-results saved to: results/trait_evaluation/test_with_traits_retrieval.pkl!
-
-Step 8: Reflect and rerank with traits...
------Reflect and Rerank (with Traits)-----
-reflect and rerank the recommended titles - 0 raw retrieval...:   0%|          | 0/10 [00:00<?, ?it/s]reflect and rerank the recommended titles - 0 raw retrieval...:  50%|█████     | 5/10 [00:00<00:00, 46.38it/s]reflect and rerank the recommended titles - 0 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 46.68it/s]reflect and rerank the recommended titles - 0 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 46.61it/s]
------Reflect and Rerank (with Traits)-----
-reflect and rerank the recommended titles - 5 raw retrieval...:   0%|          | 0/10 [00:00<?, ?it/s]reflect and rerank the recommended titles - 5 raw retrieval...:  50%|█████     | 5/10 [00:00<00:00, 46.14it/s]reflect and rerank the recommended titles - 5 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 46.28it/s]reflect and rerank the recommended titles - 5 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 46.23it/s]
------Reflect and Rerank (with Traits)-----
-reflect and rerank the recommended titles - 10 raw retrieval...:   0%|          | 0/10 [00:00<?, ?it/s]reflect and rerank the recommended titles - 10 raw retrieval...:  50%|█████     | 5/10 [00:00<00:00, 46.15it/s]reflect and rerank the recommended titles - 10 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 46.34it/s]reflect and rerank the recommended titles - 10 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 46.28it/s]
------Reflect and Rerank (with Traits)-----
-reflect and rerank the recommended titles - 15 raw retrieval...:   0%|          | 0/10 [00:00<?, ?it/s]reflect and rerank the recommended titles - 15 raw retrieval...:  50%|█████     | 5/10 [00:00<00:00, 46.08it/s]reflect and rerank the recommended titles - 15 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 46.40it/s]reflect and rerank the recommended titles - 15 raw retrieval...: 100%|██████████| 10/10 [00:00<00:00, 46.31it/s]
-# errors for 0: 0
-# errors for 5: 0
-# errors for 10: 0
-# errors for 15: 0
-results saved to: results/trait_evaluation/test_with_traits_rerank.pkl!
-
-Step 9: Evaluating trait alignment...
------Evaluating Trait Alignment (K=0)-----
-Evaluating trait alignment - K=0...:   0%|          | 0/10 [00:00<?, ?it/s]Evaluating trait alignment - K=0...:  50%|█████     | 5/10 [00:00<00:00, 45.70it/s]Evaluating trait alignment - K=0...: 100%|██████████| 10/10 [00:00<00:00, 46.26it/s]Evaluating trait alignment - K=0...: 100%|██████████| 10/10 [00:00<00:00, 46.14it/s]
------Evaluating Trait Alignment (K=5)-----
-Evaluating trait alignment - K=5...:   0%|          | 0/10 [00:00<?, ?it/s]Evaluating trait alignment - K=5...:  50%|█████     | 5/10 [00:00<00:00, 46.25it/s]Evaluating trait alignment - K=5...: 100%|██████████| 10/10 [00:00<00:00, 46.41it/s]Evaluating trait alignment - K=5...: 100%|██████████| 10/10 [00:00<00:00, 46.36it/s]
------Evaluating Trait Alignment (K=10)-----
-Evaluating trait alignment - K=10...:   0%|          | 0/10 [00:00<?, ?it/s]Evaluating trait alignment - K=10...:  50%|█████     | 5/10 [00:00<00:00, 45.94it/s]Evaluating trait alignment - K=10...: 100%|██████████| 10/10 [00:00<00:00, 46.15it/s]Evaluating trait alignment - K=10...: 100%|██████████| 10/10 [00:00<00:00, 46.09it/s]
------Evaluating Trait Alignment (K=15)-----
-Evaluating trait alignment - K=15...:   0%|          | 0/10 [00:00<?, ?it/s]Evaluating trait alignment - K=15...:  50%|█████     | 5/10 [00:00<00:00, 46.46it/s]Evaluating trait alignment - K=15...: 100%|██████████| 10/10 [00:00<00:00, 46.47it/s]Evaluating trait alignment - K=15...: 100%|██████████| 10/10 [00:00<00:00, 46.44it/s]
-
-Step 10: Post-processing...
-After post-processing: 9 samples with groundtruth
-
-Step 11: Computing trait metrics...
-
-Step 12: Evaluating recommendations (no rerank)...
-Processing 5 retrievals
-Processing top 5
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 14861.71it/s]
-Processing top 10
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 17166.32it/s]
-Processing top 15
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 14844.17it/s]
-Processing top 20
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 13395.58it/s]
-number of errors: 0
-Processing 10 retrievals
-Processing top 5
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 20218.93it/s]
-Processing top 10
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 17780.85it/s]
-Processing top 15
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 15470.79it/s]
-Processing top 20
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 13672.12it/s]
-number of errors: 0
-Processing 15 retrievals
-Processing top 5
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 20437.86it/s]
-Processing top 10
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 18414.02it/s]
-Processing top 15
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 15894.20it/s]
-Processing top 20
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 13878.21it/s]
-number of errors: 0
-5-retrieval results:
-Results on the filtered dataset:
-top-k recalls: {5: np.float64(0.3703703703703704), 10: np.float64(0.3703703703703704), 15: np.float64(0.3703703703703704), 20: np.float64(0.48148148148148145)}
-top-k ndcgs: {5: np.float64(0.23469092784563841), 10: np.float64(0.23469092784563841), 15: np.float64(0.23469092784563841), 20: np.float64(0.2608474737752649)}
-
-10-retrieval results:
-Results on the filtered dataset:
-top-k recalls: {5: np.float64(0.2222222222222222), 10: np.float64(0.2592592592592593), 15: np.float64(0.37037037037037035), 20: np.float64(0.37037037037037035)}
-top-k ndcgs: {5: np.float64(0.16666666666666666), 10: np.float64(0.18311566172032587), 15: np.float64(0.21410932234822916), 20: np.float64(0.21410932234822916)}
-
-15-retrieval results:
-Results on the filtered dataset:
-top-k recalls: {5: np.float64(0.2222222222222222), 10: np.float64(0.3333333333333333), 15: np.float64(0.37037037037037035), 20: np.float64(0.37037037037037035)}
-top-k ndcgs: {5: np.float64(0.16666666666666666), 10: np.float64(0.2037037037037037), 15: np.float64(0.2167392238710025), 20: np.float64(0.2167392238710025)}
-
-
-Step 13: Evaluating recommendations (with rerank)...
-Processing 5 retrievals
-Processing top 5
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 19763.74it/s]
-Processing top 10
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 17697.49it/s]
-Processing top 15
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 15209.00it/s]
-Processing top 20
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 13530.01it/s]
-number of errors: 0
-Processing 10 retrievals
-Processing top 5
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 20338.76it/s]
-Processing top 10
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 17500.57it/s]
-Processing top 15
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 15233.55it/s]
-Processing top 20
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 13627.70it/s]
-number of errors: 0
-Processing 15 retrievals
-Processing top 5
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 20983.18it/s]
-Processing top 10
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 17941.41it/s]
-Processing top 15
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 15656.88it/s]
-Processing top 20
-Evaluating via direct match...:   0%|          | 0/9 [00:00<?, ?it/s]Evaluating via direct match...: 100%|██████████| 9/9 [00:00<00:00, 13781.94it/s]
-number of errors: 0
-5-retrieval results:
-Results on the filtered dataset:
-top-K recalls: {5: np.float64(0.3333333333333333), 10: np.float64(0.3703703703703704), 15: np.float64(0.3703703703703704), 20: np.float64(0.48148148148148145)}
-top-K ndcgs: {5: np.float64(0.23676997261905086), 10: np.float64(0.25415066617544924), 15: np.float64(0.25415066617544924), 20: np.float64(0.2803072121050757)}
-
-10-retrieval results:
-Results on the filtered dataset:
-top-K recalls: {5: np.float64(0.1111111111111111), 10: np.float64(0.2592592592592593), 15: np.float64(0.37037037037037035), 20: np.float64(0.37037037037037035)}
-top-K ndcgs: {5: np.float64(0.1111111111111111), 10: np.float64(0.16713868251010608), 15: np.float64(0.19491646028788384), 20: np.float64(0.19491646028788384)}
-
-15-retrieval results:
-Results on the filtered dataset:
-top-K recalls: {5: np.float64(0.2222222222222222), 10: np.float64(0.3333333333333333), 15: np.float64(0.37037037037037035), 20: np.float64(0.37037037037037035)}
-top-K ndcgs: {5: np.float64(0.18121441706349528), 10: np.float64(0.21466219435949319), 15: np.float64(0.227697714526792), 20: np.float64(0.227697714526792)}
-
-
-Step 14: Printing comprehensive results...
-
-================================================================================
-COMPREHENSIVE EVALUATION RESULTS
-================================================================================
-
-
-============================================================
-Results for K=0 retrieval
-============================================================
-
-Trait Alignment Metrics:
-  Mean alignment score: 2.556 ± 0.685
-  Median alignment score: 2.0
-  Excellent rate (score=5): 0.0%
-  Good or better rate (score>=4): 11.1%
-  Poor or worse rate (score<=2): 55.6%
-
-============================================================
-Results for K=5 retrieval
-============================================================
-
-Recall@k (no rerank): {5: np.float64(0.3703703703703704), 10: np.float64(0.3703703703703704), 15: np.float64(0.3703703703703704), 20: np.float64(0.48148148148148145)}
-NDCG@k (no rerank): {5: np.float64(0.23469092784563841), 10: np.float64(0.23469092784563841), 15: np.float64(0.23469092784563841), 20: np.float64(0.2608474737752649)}
-
-Recall@k (with rerank): {5: np.float64(0.3333333333333333), 10: np.float64(0.3703703703703704), 15: np.float64(0.3703703703703704), 20: np.float64(0.48148148148148145)}
-NDCG@k (with rerank): {5: np.float64(0.23676997261905086), 10: np.float64(0.25415066617544924), 15: np.float64(0.25415066617544924), 20: np.float64(0.2803072121050757)}
-
-Trait Alignment Metrics:
-  Mean alignment score: 2.333 ± 0.471
-  Median alignment score: 2.0
-  Excellent rate (score=5): 0.0%
-  Good or better rate (score>=4): 0.0%
-  Poor or worse rate (score<=2): 66.7%
-
-============================================================
-Results for K=10 retrieval
-============================================================
-
-Recall@k (no rerank): {5: np.float64(0.2222222222222222), 10: np.float64(0.2592592592592593), 15: np.float64(0.37037037037037035), 20: np.float64(0.37037037037037035)}
-NDCG@k (no rerank): {5: np.float64(0.16666666666666666), 10: np.float64(0.18311566172032587), 15: np.float64(0.21410932234822916), 20: np.float64(0.21410932234822916)}
-
-Recall@k (with rerank): {5: np.float64(0.1111111111111111), 10: np.float64(0.2592592592592593), 15: np.float64(0.37037037037037035), 20: np.float64(0.37037037037037035)}
-NDCG@k (with rerank): {5: np.float64(0.1111111111111111), 10: np.float64(0.16713868251010608), 15: np.float64(0.19491646028788384), 20: np.float64(0.19491646028788384)}
-
-Trait Alignment Metrics:
-  Mean alignment score: 2.444 ± 0.497
-  Median alignment score: 2.0
-  Excellent rate (score=5): 0.0%
-  Good or better rate (score>=4): 0.0%
-  Poor or worse rate (score<=2): 55.6%
-
-============================================================
-Results for K=15 retrieval
-============================================================
-
-Recall@k (no rerank): {5: np.float64(0.2222222222222222), 10: np.float64(0.3333333333333333), 15: np.float64(0.37037037037037035), 20: np.float64(0.37037037037037035)}
-NDCG@k (no rerank): {5: np.float64(0.16666666666666666), 10: np.float64(0.2037037037037037), 15: np.float64(0.2167392238710025), 20: np.float64(0.2167392238710025)}
-
-Recall@k (with rerank): {5: np.float64(0.2222222222222222), 10: np.float64(0.3333333333333333), 15: np.float64(0.37037037037037035), 20: np.float64(0.37037037037037035)}
-NDCG@k (with rerank): {5: np.float64(0.18121441706349528), 10: np.float64(0.21466219435949319), 15: np.float64(0.227697714526792), 20: np.float64(0.227697714526792)}
-
-Trait Alignment Metrics:
-  Mean alignment score: 2.444 ± 0.497
-  Median alignment score: 2.0
-  Excellent rate (score=5): 0.0%
-  Good or better rate (score>=4): 0.0%
-  Poor or worse rate (score<=2): 55.6%
-
-Step 15: Generating visualizations...
-Traceback (most recent call last):
-  File "/home/xuyifan/rank_grpo/baselines/CRAG/test_traits_small.py", line 23, in <module>
-    evaluate_with_traits.main()
-  File "/home/xuyifan/rank_grpo/baselines/CRAG/evaluate_with_traits.py", line 1146, in main
-    plot_trait_comparison(trait_metrics, test_data_with_rec, save_dir)
-  File "/home/xuyifan/rank_grpo/baselines/CRAG/evaluate_with_traits.py", line 916, in plot_trait_comparison
-    ax3.set_xticklabels([f'K={k}' for K in K_values])
-  File "/home/xuyifan/rank_grpo/baselines/CRAG/evaluate_with_traits.py", line 916, in <listcomp>
-    ax3.set_xticklabels([f'K={k}' for K in K_values])
-NameError: name 'k' is not defined
