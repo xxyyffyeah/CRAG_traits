@@ -31,6 +31,7 @@ from libs.utils import process_rec_reflect_raw
 from libs.model import cf_retrieve, get_response
 from libs.metrics import evaluate_direct_match
 from libs.metrics import evaluate_direct_match_reflect_rerank
+from libs.metrics import recall_at_k, ndcg_at_k
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -259,6 +260,94 @@ def get_movie_warnings(imdb_id, sensitivity_df, warning_columns):
             continue
 
     return warnings
+
+
+def filter_groundtruth_by_trait(item, trait_lookup, title_to_imdb, sensitivity_df, warning_columns):
+    """
+    Filter groundtruth movies that conflict with the user's assigned trait.
+
+    Returns:
+        tuple: (filtered_groundtruth, original_groundtruth, conflicts)
+    """
+    trait_name = item.get('assigned_trait', '')
+    trait_info = trait_lookup.get(trait_name, {})
+    avoid_set = set(trait_info.get('avoid', []))
+
+    clean_resp_titles = item.get("clean_resp_titles", [])
+    clean_resp_attitude = item.get("clean_resp_attitude", [])
+    clean_context_titles = item.get("clean_context_titles", [])
+
+    original_groundtruth = []
+    for title, attitude in zip(clean_resp_titles, clean_resp_attitude):
+        if attitude not in ("-2", "-1") and not any(title in context for context in clean_context_titles):
+            original_groundtruth.append(title)
+
+    filtered_groundtruth = []
+    conflicts = []
+
+    for title in original_groundtruth:
+        imdb_id = None
+        if title in title_to_imdb:
+            imdb_id = title_to_imdb[title]
+        elif title.lower() in title_to_imdb:
+            imdb_id = title_to_imdb[title.lower()]
+        else:
+            clean_title = extract_movie_name(title)
+            if clean_title in title_to_imdb:
+                imdb_id = title_to_imdb[clean_title]
+            elif clean_title.lower() in title_to_imdb:
+                imdb_id = title_to_imdb[clean_title.lower()]
+
+        conflict_warnings = []
+        if imdb_id:
+            movie_warnings = set(get_movie_warnings(imdb_id, sensitivity_df, warning_columns))
+            conflict_warnings = list(movie_warnings & avoid_set)
+
+        if conflict_warnings:
+            conflicts.append({
+                'title': title,
+                'imdb_id': imdb_id,
+                'conflicts': conflict_warnings
+            })
+        else:
+            filtered_groundtruth.append(title)
+
+    return filtered_groundtruth, original_groundtruth, conflicts
+
+
+def remove_seen_local(item, rec_list):
+    """
+    Remove items already seen in the conversation context.
+    """
+    flattened_triples = [
+        (iid, title, attitude)
+        for iids, titles, attitudes in zip(item["clean_context_imdb_ids"], item["clean_context_titles"], item["clean_context_attitudes"])
+        for iid, title, attitude in zip(iids, titles, attitudes)
+    ]
+    seen_titles = {title for iid, title, attitude in flattened_triples}
+    return [rec for rec in rec_list if rec not in seen_titles]
+
+
+def evaluate_direct_match_with_rec_list(item, rec_list, k, gt_field):
+    """
+    Evaluate recall/ndcg with a provided recommendation list.
+    """
+    rec_list = remove_seen_local(item, rec_list)
+    groundtruths = item[gt_field]
+
+    hits = np.zeros(len(rec_list), dtype=int)
+    for gt in groundtruths:
+        match_results = [distance(gt, rec) for rec in rec_list]
+        matched = False
+        for i, res in enumerate(match_results):
+            if res == 0 and not matched:
+                hits[i] = 1
+                matched = True
+
+    num_gt = len(groundtruths)
+    recall = recall_at_k(hits, num_gt, k)
+    ndcg = ndcg_at_k(hits, num_gt, k)
+    return recall, ndcg
 
 
 def get_rec_imdb_ids(rec_list, title_to_imdb):
@@ -506,24 +595,22 @@ def reflect_and_rerank_with_trait(test_data_with_rec, trait_lookup):
     return test_data_with_rec
 
 
-def post_processing(test_data_with_rec):
+def post_processing(test_data_with_rec, title_to_imdb, sensitivity_df, warning_columns, trait_lookup):
     """
-    Post-process data to get groundtruth
+    Post-process data to get groundtruth (original + filtered by trait conflicts).
     """
     for item in test_data_with_rec:
-        clean_resp_titles = item["clean_resp_titles"]
-        clean_resp_attitude = item["clean_resp_attitude"]
-        clean_context_titles = item["clean_context_titles"]
+        filtered_gt, original_gt, conflicts = filter_groundtruth_by_trait(
+            item, trait_lookup, title_to_imdb, sensitivity_df, warning_columns
+        )
+        item["groundtruth_original"] = original_gt
+        item["groundtruth_filtered"] = filtered_gt
+        item["gt_conflicts"] = conflicts
 
-        groundtruth = []
-
-        for title, attitude in zip(clean_resp_titles, clean_resp_attitude):
-            if attitude not in ("-2", "-1") and not any(title in context for context in clean_context_titles):
-                groundtruth.append(title)
-
-        item["groundtruth"] = groundtruth
-
-    test_data_with_rec = [item for item in test_data_with_rec if (item["old"]["is_user"] == 0) and (item["groundtruth"])]
+    test_data_with_rec = [
+        item for item in test_data_with_rec
+        if (item["old"]["is_user"] == 0) and item["groundtruth_original"]
+    ]
 
     return test_data_with_rec
 
@@ -603,7 +690,41 @@ def calculate_safety_metrics(test_data_with_rec, title_to_imdb, sensitivity_df, 
     return avg_safety, safety_results
 
 
-def evaluate_accuracy(test_data_with_rec_filtered):
+def evaluate_baseline_accuracy(test_data_with_rec_filtered, gt_field, rec_field):
+    """
+    Evaluate baseline accuracy metrics (Recall@k, NDCG@k) using stored baseline recs.
+    """
+    avg_metrics_filtered = {}
+
+    for K in K_list:
+        print(f"Processing {K} retrievals (baseline)")
+
+        errors = set()
+        results = {k: [] for k in k_list}
+
+        for k in k_list:
+            for i, item in enumerate(tqdm(test_data_with_rec_filtered,
+                                     total=len(test_data_with_rec_filtered),
+                                     desc=f"Evaluating Baseline Recall@{k}...")):
+                try:
+                    rec_list = item.get(rec_field.format(K=K), [])
+                    results[k].append(evaluate_direct_match_with_rec_list(item, rec_list, k, gt_field=gt_field))
+                except:
+                    errors.add(i)
+
+        recalls = {k: [res[0] for res in results[k]] for k in k_list}
+        ndcgs = {k: [res[1] for res in results[k]] for k in k_list}
+
+        avg_recalls_filtered = {k: np.mean(recalls[k]) for k in k_list}
+        avg_ndcgs_filtered = {k: np.mean(ndcgs[k]) for k in k_list}
+        avg_metrics_filtered[K] = (avg_recalls_filtered, avg_ndcgs_filtered)
+
+        print(f"Number of errors: {len(errors)}")
+
+    return avg_metrics_filtered
+
+
+def evaluate_accuracy(test_data_with_rec_filtered, gt_field):
     """
     Evaluate accuracy metrics (Recall@k, NDCG@k)
     """
@@ -621,7 +742,7 @@ def evaluate_accuracy(test_data_with_rec_filtered):
                                      total=len(test_data_with_rec_filtered),
                                      desc=f"Evaluating Recall@{k}...")):
                 try:
-                    results[k].append(evaluate_direct_match_reflect_rerank(item, k, K, gt_field="groundtruth"))
+                    results[k].append(evaluate_direct_match_reflect_rerank(item, k, K, gt_field=gt_field))
                 except:
                     errors.add(i)
 
@@ -656,7 +777,7 @@ def main():
     print("\nStep 1: Loading data...")
 
     print("  Loading trait-labeled dataset...")
-    dataset_path = f"{data_root}/test_with_trait_mapping.pkl"
+    dataset_path = f"{data_root}/test_with_trait_mapping_not_GT_filtered.pkl"
     if not os.path.exists(dataset_path):
         print(f"  ERROR: Dataset not found at {dataset_path}")
         print("  Please run create_trait_dataset.py first!")
@@ -678,6 +799,11 @@ def main():
     print("  Loading sensitivity table...")
     sensitivity_df, warning_columns = load_sensitivity_table()
 
+    # Preserve baseline recommendations before trait-aware generation
+    for item in test_data_with_rec:
+        for K in K_list:
+            item[f"rec_list_raw_baseline_{K}"] = item.get(f"rec_list_raw_{K}", [])
+
     # Step 2: Run CRAG with trait information
     print("\nStep 2: Running CRAG with trait information...")
     test_data_with_rec = context_aware_retrieval_with_trait(
@@ -688,8 +814,13 @@ def main():
 
     # Step 3: Post-processing
     print("\nStep 3: Post-processing...")
-    test_data_filtered = post_processing(test_data_with_rec)
-    print(f"  After post-processing: {len(test_data_filtered)} samples with groundtruth")
+    test_data_processed = post_processing(
+        test_data_with_rec, title_to_imdb, sensitivity_df, warning_columns, trait_lookup
+    )
+    print(f"  After post-processing: {len(test_data_processed)} samples with groundtruth (original)")
+
+    test_data_filtered = [item for item in test_data_processed if item["groundtruth_filtered"]]
+    print(f"  After filtering GT conflicts: {len(test_data_filtered)} samples with groundtruth (filtered)")
 
     # Step 4: Calculate safety metrics
     print("\nStep 4: Calculating safety metrics...")
@@ -699,7 +830,21 @@ def main():
 
     # Step 5: Evaluate accuracy
     print("\nStep 5: Evaluating accuracy metrics...")
-    accuracy_metrics = evaluate_accuracy(test_data_filtered)
+    baseline_before_metrics = evaluate_baseline_accuracy(
+        test_data_processed,
+        gt_field="groundtruth_original",
+        rec_field="rec_list_raw_baseline_{K}"
+    )
+    trait_before_metrics = evaluate_accuracy(
+        test_data_processed,
+        gt_field="groundtruth_original"
+    )
+    baseline_after_metrics = evaluate_baseline_accuracy(
+        test_data_filtered,
+        gt_field="groundtruth_filtered",
+        rec_field="rec_list_raw_baseline_{K}"
+    )
+    trait_aware_metrics = evaluate_accuracy(test_data_filtered, gt_field="groundtruth_filtered")
 
     # Step 6: Print and save results
     print("\n" + "=" * 60)
@@ -713,20 +858,35 @@ def main():
 
     print("\n--- Accuracy Metrics ---")
     for K in K_list:
-        recalls, ndcgs = accuracy_metrics[K]
+        baseline_before_recalls, baseline_before_ndcgs = baseline_before_metrics[K]
+        trait_before_recalls, trait_before_ndcgs = trait_before_metrics[K]
+        baseline_after_recalls, baseline_after_ndcgs = baseline_after_metrics[K]
+        trait_recalls, trait_ndcgs = trait_aware_metrics[K]
         print(f"K={K}:")
-        print(f"  Recall@k: {recalls}")
-        print(f"  NDCG@k: {ndcgs}")
+        print(f"  Baseline (before filtering) Recall@k: {baseline_before_recalls}")
+        print(f"  Baseline (before filtering) NDCG@k: {baseline_before_ndcgs}")
+        print(f"  Trait-aware (before filtering) Recall@k: {trait_before_recalls}")
+        print(f"  Trait-aware (before filtering) NDCG@k: {trait_before_ndcgs}")
+        print(f"  Baseline (after filtering) Recall@k: {baseline_after_recalls}")
+        print(f"  Baseline (after filtering) NDCG@k: {baseline_after_ndcgs}")
+        print(f"  Trait-aware (after filtering) Recall@k: {trait_recalls}")
+        print(f"  Trait-aware (after filtering) NDCG@k: {trait_ndcgs}")
 
     # Save results
     results = {
         'safety': avg_safety,
-        'accuracy': {K: {'recall': recalls, 'ndcg': ndcgs} for K, (recalls, ndcgs) in accuracy_metrics.items()},
+        'accuracy': {
+            'baseline_before_filter': {K: {'recall': recalls, 'ndcg': ndcgs} for K, (recalls, ndcgs) in baseline_before_metrics.items()},
+            'trait_aware_before_filter': {K: {'recall': recalls, 'ndcg': ndcgs} for K, (recalls, ndcgs) in trait_before_metrics.items()},
+            'baseline_after_filter': {K: {'recall': recalls, 'ndcg': ndcgs} for K, (recalls, ndcgs) in baseline_after_metrics.items()},
+            'trait_aware_after_filter': {K: {'recall': recalls, 'ndcg': ndcgs} for K, (recalls, ndcgs) in trait_aware_metrics.items()}
+        },
         'config': {
             'model': model,
             'K_list': K_list,
             'k_list': k_list,
-            'n_samples': len(test_data_filtered)
+            'n_samples_original_gt': len(test_data_processed),
+            'n_samples_filtered_gt': len(test_data_filtered)
         }
     }
 
